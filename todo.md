@@ -11,9 +11,9 @@
   - [Late Chunking: Balancing Precision and Cost in Long Context Retrieval](https://weaviate.io/blog/late-chunking)
   - [Late Chunking of Short Chunks in Long-Context Embedding Models](https://github.com/jina-ai/late-chunking)
 - Reranking:
- - https://github.com/PrithivirajDamodaran/FlashRank
- - https://github.com/AnswerDotAI/rerankers
- - https://huggingface.co/jinaai/jina-reranker-m0-GGUF
+  - https://github.com/PrithivirajDamodaran/FlashRank
+  - https://github.com/AnswerDotAI/rerankers
+  - https://huggingface.co/jinaai/jina-reranker-m0-GGUF
 - Experiment Agentic Patterns:
   - https://weaviate.io/blog/what-is-agentic-rag
   - https://github.com/neural-maze/agentic_patterns
