@@ -1,10 +1,12 @@
 # Todo
 - https://huggingface.co/bartowski/c4ai-command-r7b-12-2024-GGUF
 - https://github.com/abetlen/llama-cpp-python/issues/1995
-- Support [(Ollama,](https://github.com/ollama/ollama) using the Python API to create an additional client.
-    - https://github.com/ollama/ollama-python/tree/main
-    - https://github.com/ollama/ollama-python/tree/main/examples
-    - https://ollama.com/library/llama3.2-vision:11b
+- Investigate llama.cpp:
+  - server:
+    - https://github.com/ggml-org/llama.cpp/tree/master/tools/server
+  - webui:
+    - https://github.com/ggml-org/llama.cpp/discussions/16938
+    - https://github.com/ggml-org/llama.cpp/tree/master/tools/server/webui
 - Chunking:
   - [Introducing Contextual Retrieval](https://www.anthropic.com/news/contextual-retrieval)
   - [Chunking for RAG: Stop Breaking Your Documents Into Meaningless Pieces](https://www.youtube.com/watch?v=trG5pjChAkM)
@@ -33,11 +35,8 @@
     - Llama Guard 3-8B is a fine-tuned Llama-3.1-8B pretrained model for content safety classification.
   - https://huggingface.co/meta-llama/Llama-Guard-3-11B-Vision
     - Llama Guard 3 Vision is a Llama-3.2-11B pretrained model, fine-tuned for content safety classification.
-- Experiment Multimodal LLMs with `Llama 3.2 Vision 11B` (text + images in / text out)
-  - The model is currently not supported by `llama.cpp` https://github.com/ggerganov/llama.cpp/issues/9643
-  - Is it supported just by [(Ollama,](https://github.com/ollama/ollama):
-    - https://ollama.com/library/llama3.2-vision:11b
-  - `Llama 3.2 Vision 11B` requires least `8GB` of `VRAM`, and the `90B` model requires at least `64GB` of `VRAM`.
+- Experiment Multimodal LLMs:
+  - `Llama 3.2 Vision 11B` (is currently not supported by `llama.cpp` https://github.com/ggerganov/llama.cpp/issues/9643) requires least `8GB` of `VRAM`, and the `90B` model requires at least `64GB` of `VRAM`.
   - Take also a look here: https://huggingface.co/unsloth
 - Explore long term memory:
   - https://help.openai.com/en/articles/8590148-memory-faq
