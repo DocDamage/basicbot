@@ -38,6 +38,7 @@
 - Experiment Multimodal LLMs:
   - `Llama 3.2 Vision 11B` (is currently not supported by `llama.cpp` https://github.com/ggerganov/llama.cpp/issues/9643) requires least `8GB` of `VRAM`, and the `90B` model requires at least `64GB` of `VRAM`.
   - Take also a look here: https://huggingface.co/unsloth
+  - [Jina-VLM: Small Multilingual Vision Language Model](https://jina.ai/news/jina-vlm-small-multilingual-vision-language-model/)
 - Explore long term memory:
   - https://help.openai.com/en/articles/8590148-memory-faq
   - https://ai.gopubby.com/long-term-memory-for-agentic-ai-systems-4ae9b37c6c0f
