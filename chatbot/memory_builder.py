@@ -4,6 +4,7 @@ from pathlib import Path
 
 from bot.memory.embedder import Embedder
 from bot.memory.vector_database.chroma import Chroma
+from document_loader.contextual_chunker import EnhancedTextSplitter
 from document_loader.format import Format
 from document_loader.loader import DirectoryLoader
 from document_loader.text_splitter import create_recursive_text_splitter
@@ -31,34 +32,80 @@ def load_documents(docs_path: Path) -> list[Document]:
     return loader.load()
 
 
-def split_chunks(sources: list, chunk_size: int = 512, chunk_overlap: int = 25) -> list:
+def split_chunks(
+    sources: list,
+    chunk_size: int = 512,
+    chunk_overlap: int = 25,
+    use_contextual: bool = False,
+    use_late_chunking: bool = False
+) -> list:
     """
-    Splits a list of sources into smaller chunks.
+    Splits a list of sources into smaller chunks with optional enhancements.
 
     Args:
         sources (List): The list of sources to be split into chunks.
         chunk_size (int, optional): The maximum size of each chunk. Defaults to 512.
-        chunk_overlap (int, optional): The amount of overlap between consecutive chunks. Defaults to 0.
+        chunk_overlap (int, optional): The amount of overlap between consecutive chunks. Defaults to 25.
+        use_contextual (bool, optional): Whether to add contextual information. Defaults to False.
+        use_late_chunking (bool, optional): Whether to use late chunking. Defaults to False.
 
     Returns:
         List: A list of smaller chunks obtained from the input sources.
     """
     chunks = []
-    splitter = create_recursive_text_splitter(
-        format=Format.MARKDOWN.value, chunk_size=chunk_size, chunk_overlap=chunk_overlap
-    )
-    for chunk in splitter.split_documents(sources):
-        chunks.append(chunk)
+
+    if use_contextual or use_late_chunking:
+        # Use enhanced text splitter
+        logger.info("Using enhanced text splitter with contextual/late chunking")
+        enhanced_splitter = EnhancedTextSplitter(
+            chunk_size=chunk_size,
+            overlap=chunk_overlap,
+            use_contextual=use_contextual,
+            use_late_chunking=use_late_chunking,
+            llm_client=None  # Would need to be passed in for contextual chunking
+        )
+
+        for source in sources:
+            processed_docs = enhanced_splitter.split_and_process(
+                source.page_content, source.metadata
+            )
+            chunks.extend(processed_docs)
+    else:
+        # Use standard splitter
+        splitter = create_recursive_text_splitter(
+            format=Format.MARKDOWN.value, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
+        for chunk in splitter.split_documents(sources):
+            chunks.append(chunk)
+
     return chunks
 
 
-def build_memory_index(docs_path: Path, vector_store_path: str, chunk_size: int, chunk_overlap: int):
+def build_memory_index(
+    docs_path: Path,
+    vector_store_path: str,
+    chunk_size: int,
+    chunk_overlap: int,
+    use_contextual: bool = False,
+    use_late_chunking: bool = False
+):
     logger.info(f"Loading documents from: {docs_path}")
     sources = load_documents(docs_path)
     logger.info(f"Number of loaded documents: {len(sources)}")
 
     logger.info("Chunking documents...")
-    chunks = split_chunks(sources, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+    if use_contextual:
+        logger.info("Using contextual chunking")
+    if use_late_chunking:
+        logger.info("Using late chunking")
+
+    chunks = split_chunks(
+        sources,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        use_contextual=use_contextual,
+        use_late_chunking=use_late_chunking
+    )
     logger.info(f"Number of generated chunks: {len(chunks)}")
 
     logger.info("Creating memory index...")
@@ -84,6 +131,20 @@ def get_args() -> argparse.Namespace:
         required=False,
         default=25,
     )
+    parser.add_argument(
+        "--contextual",
+        action="store_true",
+        help="Enable contextual chunking to add document context to chunks.",
+        required=False,
+        default=False,
+    )
+    parser.add_argument(
+        "--late-chunking",
+        action="store_true",
+        help="Enable late chunking for better embedding quality.",
+        required=False,
+        default=False,
+    )
 
     return parser.parse_args()
 
@@ -98,6 +159,8 @@ def main(parameters):
         str(vector_store_path),
         parameters.chunk_size,
         parameters.chunk_overlap,
+        parameters.contextual,
+        parameters.late_chunking,
     )
 
 

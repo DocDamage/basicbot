@@ -4,6 +4,7 @@ from bot.model.settings.deep_seek import DeepSeekR1SevenSettings
 from bot.model.settings.llama import Llama31Settings, Llama31ToolSettings, Llama32OneSettings, Llama32ThreeSettings
 from bot.model.settings.openchat import OpenChat35Settings, OpenChat36Settings
 from bot.model.settings.phi import Phi35Settings
+from bot.model.settings.phi3_mini import Phi3MiniSettings
 from bot.model.settings.qwen import Qwen25ThreeMathReasoningSettings, Qwen25ThreeSettings
 from bot.model.settings.stablelm_zephyr import StableLMZephyrSettings
 from bot.model.settings.starling import StarlingSettings
@@ -15,6 +16,7 @@ class Model(Enum):
     OPENCHAT_3_6 = "openchat-3.6"
     STARLING = "starling"
     PHI_3_5 = "phi-3.5"
+    PHI_3_MINI = "phi-3-mini"
     LLAMA_3_1 = "llama-3.1"
     LLAMA_3_1_tool = "llama-3.1-tool"
     LLAMA_3_2_one = "llama-3.2:1b"
@@ -30,6 +32,7 @@ SUPPORTED_MODELS = {
     Model.OPENCHAT_3_6.value: OpenChat36Settings,
     Model.STARLING.value: StarlingSettings,
     Model.PHI_3_5.value: Phi35Settings,
+    Model.PHI_3_MINI.value: Phi3MiniSettings,
     Model.LLAMA_3_1.value: Llama31Settings,
     Model.LLAMA_3_1_tool.value: Llama31ToolSettings,
     Model.LLAMA_3_2_one.value: Llama32OneSettings,

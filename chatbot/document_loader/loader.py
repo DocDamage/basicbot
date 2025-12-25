@@ -5,7 +5,7 @@ from typing import Any
 from entities.document import Document
 from helpers.log import get_logger
 from tqdm import tqdm
-from unstructured.partition.auto import partition
+# from unstructured.partition.auto import partition
 
 logger = get_logger(__name__)
 
@@ -82,13 +82,9 @@ class DirectoryLoader:
         if doc_path.is_file():
             try:
                 logger.debug(f"Processing file: {str(doc_path)}")
-                # Loads document from the specified path.
-                # The unstructured `partition` function and will automatically detect the file type with libmagic to
-                # determine the file's type and route it to the appropriate partitioning function.
-                elements = partition(filename=str(doc_path), **self.partition_kwargs)
-                # Note: The `partition` function returns a list of elements that we can filter by type based on the
-                # specific format.
-                text = "\n\n".join([str(el) for el in elements])
+                # Simple text loading instead of unstructured
+                with open(doc_path, 'r', encoding='utf-8') as f:
+                    text = f.read()
                 docs.extend([Document(page_content=text, metadata={"source": str(doc_path)})])
             finally:
                 if pbar:

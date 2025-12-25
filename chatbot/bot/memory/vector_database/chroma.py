@@ -1,5 +1,7 @@
 import logging
+import time
 import uuid
+from functools import wraps
 from typing import Any, Callable, Iterable
 
 import chromadb
@@ -11,6 +13,19 @@ from cleantext import clean
 from entities.document import Document
 
 logger = logging.getLogger(__name__)
+
+
+def timing_decorator(func: Callable) -> Callable:
+    """Decorator to measure function execution time."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        logger.info(f"{func.__name__} executed in {execution_time:.4f} seconds")
+        return result
+    return wrapper
 
 
 class Chroma:
@@ -193,7 +208,7 @@ class Chroma:
         Args:
             chunks (list): List of Document objects to add to the collection.
         """
-        texts = [clean(doc.page_content, no_emoji=True) for doc in chunks]
+        texts = [clean(doc.page_content) for doc in chunks]
         metadatas = [doc.metadata for doc in chunks]
         self.from_texts(
             texts=texts,
@@ -345,3 +360,145 @@ class Chroma:
         if any(similarity < 0.0 or similarity > 1.0 for _, similarity in docs_and_similarities):
             logger.warning("Relevance scores must be between" f" 0 and 1, got {docs_and_similarities}")
         return docs_and_similarities
+
+    def batch_similarity_search(
+        self,
+        queries: list[str],
+        k: int = 4,
+        threshold: float | None = 0.2,
+        **kwargs
+    ) -> list[list[Document]]:
+        """
+        Perform multiple similarity searches in batch for improved performance.
+
+        Args:
+            queries: List of query strings to search for
+            k: Number of results to return per query. Defaults to 4.
+            threshold: Relevance score threshold for filtering results
+            **kwargs: Additional arguments passed to Chroma query
+
+        Returns:
+            List of lists of Documents, one list per query
+        """
+        if not queries:
+            return []
+
+        # Use Chroma's batch query API
+        if self.embedding is None:
+            results = self.__query_collection(
+                query_texts=queries,
+                n_results=k,
+                **kwargs
+            )
+        else:
+            # Embed all queries at once for better performance
+            query_embeddings = self.embedding.embed_documents(queries)
+            results = self.__query_collection(
+                query_embeddings=query_embeddings,
+                n_results=k,
+                **kwargs
+            )
+
+        # Format batch results
+        return self._format_batch_results(results, threshold, k)
+
+    def _format_batch_results(
+        self,
+        results: dict,
+        threshold: float | None = 0.2,
+        k: int = 4
+    ) -> list[list[Document]]:
+        """
+        Format Chroma batch query results into Document objects.
+
+        Args:
+            results: Raw results from Chroma batch query
+            threshold: Relevance score threshold for filtering
+            k: Number of results per query
+
+        Returns:
+            List of lists of Document objects
+        """
+        formatted_results = []
+
+        # Get relevance score function for converting distances to scores
+        relevance_score_fn = self.__select_relevance_score_fn()
+
+        # Process each query's results
+        for query_idx in range(len(results["documents"])):
+            query_docs = []
+            documents = results["documents"][query_idx]
+            metadatas = results["metadatas"][query_idx]
+            distances = results["distances"][query_idx]
+
+            # Create Document objects with scores
+            docs_and_scores = []
+            for doc_content, metadata, distance in zip(documents, metadatas, distances):
+                if doc_content:  # Skip empty results
+                    doc = Document(page_content=doc_content, metadata=metadata or {})
+                    relevance_score = relevance_score_fn(distance)
+                    docs_and_scores.append((doc, relevance_score))
+
+            # Apply threshold filtering if specified
+            if threshold is not None:
+                docs_and_scores = [doc_score for doc_score in docs_and_scores if doc_score[1] > threshold]
+
+            # Sort by relevance score (highest first)
+            docs_and_scores.sort(key=lambda x: x[1], reverse=True)
+
+            # Take top k results
+            query_docs = [doc for doc, _ in docs_and_scores[:k]]
+            formatted_results.append(query_docs)
+
+        return formatted_results
+
+    @timing_decorator
+    def benchmark_query_performance(
+        self,
+        queries: list[str],
+        k: int = 4,
+        num_runs: int = 5
+    ) -> dict[str, float]:
+        """
+        Benchmark performance comparison between single and batch querying.
+
+        Args:
+            queries: List of query strings to test
+            k: Number of results per query
+            num_runs: Number of benchmark runs for averaging
+
+        Returns:
+            Dictionary with performance metrics
+        """
+        if not queries:
+            return {"error": "No queries provided"}
+
+        # Benchmark single queries
+        single_times = []
+        for _ in range(num_runs):
+            start_time = time.time()
+            for query in queries:
+                self.similarity_search(query, k)
+            single_times.append(time.time() - start_time)
+
+        # Benchmark batch queries
+        batch_times = []
+        for _ in range(num_runs):
+            start_time = time.time()
+            self.batch_similarity_search(queries, k)
+            batch_times.append(time.time() - start_time)
+
+        # Calculate statistics
+        import numpy as np
+        single_avg = np.mean(single_times)
+        batch_avg = np.mean(batch_times)
+        speedup = single_avg / batch_avg if batch_avg > 0 else float('inf')
+
+        return {
+            "single_query_avg_time": round(single_avg, 4),
+            "batch_query_avg_time": round(batch_avg, 4),
+            "speedup_factor": round(speedup, 2),
+            "num_queries": len(queries),
+            "results_per_query": k,
+            "benchmark_runs": num_runs
+        }

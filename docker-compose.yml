@@ -1,0 +1,12 @@
+services:
+  rag-chatbot:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./docs:/app/docs
+      - ./vector_store:/app/vector_store
+      - ./models:/app/models
+    environment:
+      - TRANSFORMERS_CACHE=/app/.cache
+    restart: unless-stopped
