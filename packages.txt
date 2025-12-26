@@ -1,0 +1,12 @@
+# System dependencies for Streamlit Cloud
+# These will be installed using apt-get
+
+# Build tools
+build-essential
+# Python dev headers (sometimes needed)
+python3-dev
+# For some scientific computing
+libopenblas-dev
+# For image processing
+libjpeg-dev
+zlib1g-dev
