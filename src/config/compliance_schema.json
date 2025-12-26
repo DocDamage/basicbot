@@ -1,0 +1,235 @@
+{
+  "metadata_schema": {
+    "source": {
+      "type": "string",
+      "description": "Data source identifier",
+      "enum": ["REACH", "ECHA", "EUR-Lex", "PlastChem", "IUCLID", "Prop65", "OEHHA"],
+      "required": true
+    },
+    "type": {
+      "type": "string",
+      "description": "Document type",
+      "enum": ["article", "substance", "restriction", "svhc", "authorization", "annex", "amendment", "chemical", "threshold", "warning_rule"],
+      "required": true
+    },
+    "jurisdiction": {
+      "type": "string",
+      "description": "Legal jurisdiction",
+      "enum": ["EU", "US", "US-CA", "UK", "Global"],
+      "default": "EU",
+      "required": false
+    },
+    "domain": {
+      "type": "string",
+      "description": "Domain category",
+      "enum": ["chemical_regulation", "hazard_data", "compliance", "restriction", "authorization"],
+      "default": "chemical_regulation",
+      "required": false
+    },
+    "article_number": {
+      "type": "string",
+      "description": "REACH article number (e.g., 'Article 33')",
+      "required": false
+    },
+    "cas_number": {
+      "type": "string",
+      "description": "CAS registry number (format: XXX-XX-X)",
+      "pattern": "^\\d{2,7}-\\d{2}-\\d$",
+      "required": false
+    },
+    "ec_number": {
+      "type": "string",
+      "description": "EC number (format: XXX-XXX-X)",
+      "pattern": "^\\d{3}-\\d{3}-\\d$",
+      "required": false
+    },
+    "substance_name": {
+      "type": "string",
+      "description": "Chemical substance name",
+      "required": false
+    },
+    "hazard_tags": {
+      "type": "array",
+      "description": "Hazard classification tags",
+      "items": {
+        "type": "string",
+        "enum": [
+          "carcinogenic",
+          "mutagenic",
+          "reprotoxic",
+          "persistent",
+          "bioaccumulative",
+          "toxic",
+          "endocrine_disruptor",
+          "respiratory_sensitizer",
+          "skin_sensitizer",
+          "flammable",
+          "explosive",
+          "oxidizing",
+          "corrosive",
+          "environmental_hazard"
+        ]
+      },
+      "required": false
+    },
+    "chemical_class": {
+      "type": "string",
+      "description": "Chemical classification",
+      "enum": ["polymer", "organic", "inorganic", "metal", "alloy", "nanomaterial"],
+      "required": false
+    },
+    "reach_status": {
+      "type": "string",
+      "description": "REACH registration/authorization status",
+      "enum": ["registered", "authorized", "restricted", "svhc", "candidate", "not_registered"],
+      "required": false
+    },
+    "date_updated": {
+      "type": "string",
+      "description": "Last update date (ISO 8601 format)",
+      "format": "date",
+      "required": false
+    },
+    "restriction_type": {
+      "type": "string",
+      "description": "Type of restriction",
+      "enum": ["prohibited", "restricted", "conditional", "notification_required"],
+      "required": false
+    },
+    "authorization_application_date": {
+      "type": "string",
+      "description": "Authorization application deadline (ISO 8601 format)",
+      "format": "date",
+      "required": false
+    },
+    "sunset_date": {
+      "type": "string",
+      "description": "Sunset date for authorization (ISO 8601 format)",
+      "format": "date",
+      "required": false
+    },
+    "prop65_metadata": {
+      "toxicity_type": {
+        "type": "string",
+        "enum": ["cancer", "reproductive", "both"],
+        "required": false
+      },
+      "date_listed": {
+        "type": "string",
+        "format": "date",
+        "required": false
+      },
+      "nsrl": {
+        "type": "object",
+        "properties": {
+          "value": {"type": "number"},
+          "unit": {"type": "string"},
+          "effective_date": {"type": "string", "format": "date"}
+        },
+        "required": false
+      },
+      "madl": {
+        "type": "object",
+        "properties": {
+          "value": {"type": "number"},
+          "unit": {"type": "string"},
+          "effective_date": {"type": "string", "format": "date"}
+        },
+        "required": false
+      },
+      "warning_required": {
+        "type": "boolean",
+        "required": false
+      },
+      "warning_type": {
+        "type": "string",
+        "enum": ["consumer_product", "occupational", "environmental"],
+        "required": false
+      }
+    },
+    "toxicity_type": {
+      "type": "string",
+      "description": "Prop 65 toxicity type",
+      "enum": ["cancer", "reproductive", "both"],
+      "required": false
+    },
+    "date_listed": {
+      "type": "string",
+      "description": "Date listed on Prop 65 (ISO 8601 format)",
+      "format": "date",
+      "required": false
+    },
+    "nsrl_value": {
+      "type": "number",
+      "description": "NSRL threshold value",
+      "required": false
+    },
+    "nsrl_unit": {
+      "type": "string",
+      "description": "NSRL threshold unit",
+      "required": false
+    },
+    "madl_value": {
+      "type": "number",
+      "description": "MADL threshold value",
+      "required": false
+    },
+    "madl_unit": {
+      "type": "string",
+      "description": "MADL threshold unit",
+      "required": false
+    },
+    "warning_required": {
+      "type": "boolean",
+      "description": "Whether Prop 65 warning is required",
+      "required": false
+    },
+    "warning_type": {
+      "type": "string",
+      "description": "Type of Prop 65 warning required",
+      "enum": ["consumer_product", "occupational", "environmental"],
+      "required": false
+    }
+  },
+  "tagging_rules": {
+    "article": {
+      "required_fields": ["source", "type", "article_number", "jurisdiction"],
+      "optional_fields": ["domain", "date_updated"]
+    },
+    "substance": {
+      "required_fields": ["source", "type", "substance_name"],
+      "optional_fields": ["cas_number", "ec_number", "hazard_tags", "chemical_class", "reach_status", "date_updated"]
+    },
+    "svhc": {
+      "required_fields": ["source", "type", "substance_name"],
+      "optional_fields": ["cas_number", "ec_number", "hazard_tags", "date_updated", "inclusion_date"]
+    },
+    "restriction": {
+      "required_fields": ["source", "type", "substance_name"],
+      "optional_fields": ["cas_number", "restriction_type", "hazard_tags", "date_updated"]
+    },
+    "authorization": {
+      "required_fields": ["source", "type", "substance_name"],
+      "optional_fields": ["cas_number", "authorization_application_date", "sunset_date", "hazard_tags", "date_updated"]
+    },
+    "chemical": {
+      "required_fields": ["source", "type", "substance_name", "toxicity_type", "date_listed"],
+      "optional_fields": ["cas_number", "nsrl_value", "nsrl_unit", "madl_value", "madl_unit", "warning_required", "warning_type", "jurisdiction"]
+    },
+    "threshold": {
+      "required_fields": ["source", "type"],
+      "optional_fields": ["cas_number", "substance_name", "nsrl_value", "nsrl_unit", "madl_value", "madl_unit", "jurisdiction"]
+    },
+    "warning_rule": {
+      "required_fields": ["source", "type"],
+      "optional_fields": ["jurisdiction", "date_updated"]
+    }
+  },
+  "normalization_rules": {
+    "cas_number_format": "^\\d{2,7}-\\d{2}-\\d$",
+    "ec_number_format": "^\\d{3}-\\d{3}-\\d$",
+    "article_number_format": "^Article\\s+\\d+",
+    "date_format": "YYYY-MM-DD"
+  }
+}
+
