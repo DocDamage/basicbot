@@ -1,0 +1,90 @@
+.reader-ui {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #fdf6e3;
+    /* Sepia-ish default */
+    color: #333;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+}
+
+.reader-toolbar {
+    padding: 15px 30px;
+    background: #eee8d5;
+    border-bottom: 1px solid #d3cbb8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.reader-toolbar button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: #586e75;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+.reader-toolbar button:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.reader-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.reader-actions .sep {
+    width: 1px;
+    height: 20px;
+    background: #ccc;
+}
+
+.play-btn {
+    background: #268bd2 !important;
+    color: white !important;
+}
+
+.play-btn.active {
+    background: #cb4b16 !important;
+}
+
+.reader-viewport {
+    flex: 1;
+    overflow-y: auto;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+}
+
+.markdown-content {
+    max-width: 800px;
+    width: 100%;
+    line-height: 1.6;
+    font-family: 'Merriweather', serif;
+}
+
+.markdown-content h1,
+.markdown-content h2 {
+    margin-top: 2em;
+    margin-bottom: 1em;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.5em;
+}
+
+/* Dark Mode Support (Basic media query usually, or programmatic class) */
+@media (prefers-color-scheme: dark) {
+    /* For now we force light mode for "paper" feel unless user specific request, 
+       but let's respect system dark if we want */
+}
