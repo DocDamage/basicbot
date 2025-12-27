@@ -136,6 +136,7 @@ ENV/
 
 # Environment variables
 .env.local
+.key
 
 # Data directories (large files)
 data/vector_db/

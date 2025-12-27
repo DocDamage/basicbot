@@ -38,6 +38,55 @@ class ChatApp(ctk.CTk):
         else:
             self.gui_agent = None
     
+    def _monitor_indexing_progress(self):
+        """Monitor indexing progress and update UI"""
+        try:
+            from src.utils.indexing_progress import IndexingProgress
+            progress_tracker = IndexingProgress()
+            progress = progress_tracker.get_progress()
+            
+            # Update progress bar
+            percentage = progress_tracker.get_percentage() / 100.0
+            self.progress_bar.set(percentage)
+            
+            # Update status label
+            status = progress.get("status", "idle")
+            message = progress.get("message", "Ready")
+            
+            if status == "indexing":
+                processed = progress.get("processed_files", 0)
+                total = progress.get("total_files", 0)
+                chunks = progress.get("indexed_chunks", 0)
+                total_chunks = progress.get("total_chunks", 0)
+                
+                if total > 0:
+                    status_text = f"Indexing: {processed}/{total} files"
+                else:
+                    status_text = f"Indexing: {chunks}/{total_chunks} chunks"
+                
+                if message:
+                    status_text += f"\n{message}"
+                
+                self.progress_label.configure(text=status_text)
+                # Change color to indicate active indexing
+                self.progress_bar.configure(progress_color="#1f538d")
+            elif status == "complete":
+                self.progress_label.configure(text="✓ Indexing complete")
+                self.progress_bar.configure(progress_color="#2fa572")
+            elif status == "error":
+                self.progress_label.configure(text=f"✗ Error: {message}")
+                self.progress_bar.configure(progress_color="#cc0000")
+            else:
+                self.progress_label.configure(text="Ready")
+                self.progress_bar.configure(progress_color="#1f538d")
+            
+        except Exception as e:
+            # Silently fail if progress tracking isn't available
+            pass
+        
+        # Schedule next update (every 1 second)
+        self.after(1000, self._monitor_indexing_progress)
+    
     def _create_widgets(self):
         """Create GUI widgets"""
         # Main container
@@ -79,6 +128,32 @@ class ChatApp(ctk.CTk):
             command=self._open_writing
         )
         self.writing_btn.pack(pady=10, padx=10, fill="x")
+        
+        # Indexing progress section
+        self.indexing_frame = ctk.CTkFrame(self.sidebar)
+        self.indexing_frame.pack(pady=10, padx=10, fill="x")
+        
+        self.indexing_label = ctk.CTkLabel(
+            self.indexing_frame,
+            text="Indexing Status",
+            font=("Arial", 12, "bold")
+        )
+        self.indexing_label.pack(pady=(10, 5))
+        
+        self.progress_bar = ctk.CTkProgressBar(self.indexing_frame)
+        self.progress_bar.pack(pady=5, padx=10, fill="x")
+        self.progress_bar.set(0)
+        
+        self.progress_label = ctk.CTkLabel(
+            self.indexing_frame,
+            text="Ready",
+            font=("Arial", 10),
+            wraplength=180
+        )
+        self.progress_label.pack(pady=(0, 10), padx=10)
+        
+        # Start progress monitoring
+        self._monitor_indexing_progress()
         
         # Main chat area
         self.chat_frame = ctk.CTkFrame(self)

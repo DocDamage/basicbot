@@ -156,9 +156,10 @@ class DocumentAgent(BaseAgent):
                 chunk_overlap=chunk_overlap
             )
         
-        # Add source file to all chunks
+        # Add source file to all chunks (normalize path)
+        normalized_path = os.path.abspath(file_path).replace('\\', '/') if file_path else ''
         for chunk in chunks:
-            chunk['source_file'] = file_path
+            chunk['source_file'] = normalized_path
         
         self.chunks.extend(chunks)
         return chunks
@@ -189,9 +190,10 @@ class DocumentAgent(BaseAgent):
             chunk_overlap=chunk_overlap
         )
         
-        # Add source file to all chunks
+        # Add source file to all chunks (normalize path)
+        normalized_path = os.path.abspath(file_path).replace('\\', '/') if file_path else ''
         for chunk in chunks:
-            chunk['source_file'] = file_path
+            chunk['source_file'] = normalized_path
         
         self.chunks.extend(chunks)
         return chunks
@@ -224,9 +226,10 @@ class DocumentAgent(BaseAgent):
             chunk_overlap=chunk_overlap
         )
         
-        # Add source file to all chunks
+        # Add source file to all chunks (normalize path)
+        normalized_path = os.path.abspath(file_path).replace('\\', '/') if file_path else ''
         for chunk in chunks:
-            chunk['source_file'] = file_path
+            chunk['source_file'] = normalized_path
         
         self.chunks.extend(chunks)
         return chunks
@@ -237,11 +240,12 @@ class DocumentAgent(BaseAgent):
         
         Args:
             input_data: Dict with 'zip_files' list, 'file_paths' list, or 'file_path' string
-            **kwargs: Additional parameters (chunk_size, chunk_overlap, book_metadata)
+            **kwargs: Additional parameters (chunk_size, chunk_overlap, book_metadata, progress_tracker)
         """
         chunk_size = kwargs.get('chunk_size', 500)
         chunk_overlap = kwargs.get('chunk_overlap', 50)
         book_metadata = kwargs.get('book_metadata')
+        progress_tracker = kwargs.get('progress_tracker')
         
         if isinstance(input_data, dict):
             zip_files = input_data.get('zip_files', [])
@@ -408,6 +412,14 @@ class DocumentAgent(BaseAgent):
                     self.logger.debug(f"  ✓ Created {len(chunks)} chunks from {file_name}")
                 else:
                     self.logger.warning(f"  ⚠️  No chunks created from {file_name}")
+                
+                # Update progress tracker if provided
+                if progress_tracker:
+                    progress_tracker.update_file(
+                        processed=processed_count,
+                        current_file=file_path,
+                        message=f"Processing {os.path.basename(file_path)}"
+                    )
                 
                 # Update progress file after each file
                 elapsed = (datetime.now() - start_time).total_seconds()

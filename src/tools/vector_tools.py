@@ -181,6 +181,114 @@ def search_vectors(
         return []
 
 
+def get_indexed_files(collection_name: Optional[str] = None) -> set:
+    """
+    Get set of all file paths that are already indexed
+    
+    Args:
+        collection_name: Collection name (uses default if None)
+        
+    Returns:
+        Set of file paths that have chunks in the vector database
+    """
+    if collection_name is None:
+        collection_name = _collection_name
+    
+    client = _get_client()
+    indexed_files = set()
+    
+    try:
+        # Check if collection exists
+        collections = client.get_collections().collections
+        collection_names = [c.name for c in collections]
+        
+        if collection_name not in collection_names:
+            return indexed_files
+        
+        # Scroll through all points to get unique source_file values
+        # Use scroll with limit to get all points
+        offset = None
+        batch_size = 1000
+        
+        while True:
+            result = client.scroll(
+                collection_name=collection_name,
+                limit=batch_size,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False
+            )
+            
+            points, next_offset = result
+            
+            if not points:
+                break
+            
+            # Extract source_file from each point's payload
+            for point in points:
+                payload = point.payload or {}
+                source_file = payload.get('source_file')
+                if source_file:
+                    indexed_files.add(source_file)
+            
+            if next_offset is None:
+                break
+            
+            offset = next_offset
+        
+        return indexed_files
+        
+    except Exception as e:
+        print(f"Error getting indexed files: {e}")
+        return indexed_files
+
+
+def is_file_indexed(file_path: str, collection_name: Optional[str] = None) -> bool:
+    """
+    Check if a specific file is already indexed
+    
+    Args:
+        file_path: Path to file to check
+        collection_name: Collection name (uses default if None)
+        
+    Returns:
+        True if file has chunks in the vector database, False otherwise
+    """
+    if collection_name is None:
+        collection_name = _collection_name
+    
+    client = _get_client()
+    
+    try:
+        # Check if collection exists
+        collections = client.get_collections().collections
+        collection_names = [c.name for c in collections]
+        
+        if collection_name not in collection_names:
+            return False
+        
+        # Check if any points exist with this source_file
+        # Use scroll with filter to check efficiently
+        result = client.scroll(
+            collection_name=collection_name,
+            limit=1,
+            scroll_filter=Filter(
+                must=[
+                    FieldCondition(key="source_file", match=MatchValue(value=file_path))
+                ]
+            ),
+            with_payload=False,
+            with_vectors=False
+        )
+        
+        points, _ = result
+        return len(points) > 0
+        
+    except Exception as e:
+        print(f"Error checking if file is indexed: {e}")
+        return False
+
+
 def search_by_cas_number(
     cas_number: str,
     top_k: int = 5,

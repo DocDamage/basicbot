@@ -1,8 +1,28 @@
 """Main entry point for RAG Chatbot"""
 
-import os
+# Python 3.13 compatibility fix - must be imported before any other imports
 import sys
 from pathlib import Path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+try:
+    from src.utils.six_moves_compat import *  # noqa: F401, F403
+except ImportError:
+    # If the compat module doesn't exist, try inline fix
+    import types
+    import io
+    import queue
+    if 'six.moves' not in sys.modules:
+        moves = types.ModuleType('six.moves')
+        moves.__path__ = []
+        sys.modules['six.moves'] = moves
+        moves.StringIO = io.StringIO
+        moves.cStringIO = io.StringIO
+        moves.queue = queue
+        moves.Queue = queue.Queue
+
+import os
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -105,44 +125,129 @@ def initialize_framework():
     return framework
 
 
-def initialize_documents(framework):
+def initialize_documents(framework, progress_tracker=None):
     """Initialize documents from extracted directory or zip files"""
+    from src.utils.indexing_progress import IndexingProgress
+    
+    if progress_tracker is None:
+        progress_tracker = IndexingProgress()
+    
     settings = get_settings()
     extracted_docs_dir = os.getenv("EXTRACTED_DOCS_DIR", "./data/extracted_docs")
+    collection_name = os.getenv("QDRANT_COLLECTION_NAME", "rag_documents")
     
     # Check if files are already extracted
     extracted_path = Path(extracted_docs_dir)
     if extracted_path.exists():
         # Find all .md files in extracted directory
-        md_files = list(extracted_path.rglob("*.md")) + list(extracted_path.rglob("*.markdown"))
+        all_md_files = list(extracted_path.rglob("*.md")) + list(extracted_path.rglob("*.markdown"))
+        
+        # Filter out non-content files (project documentation, not searchable content)
+        # Common patterns: README, LICENSE, CHANGELOG, BUILD, INSTALL, etc.
+        exclude_patterns = [
+            'README', 'LICENSE', 'CHANGELOG', 'CONTRIBUTING', 'AUTHORS', 
+            'COPYING', 'NOTICE', 'INSTALL', 'TODO', 'HISTORY', 'CHANGES', 
+            'CREDITS', 'ACKNOWLEDGEMENTS', 'ACKNOWLEDGMENTS', 'CONTRIBUTORS',
+            'MAINTAINERS', 'NOTES', 'RELEASE', 'VERSION', 'UPGRADE',
+            'DEPLOYMENT', 'SETUP', 'BUILD', 'MAKEFILE'
+        ]
+        
+        def is_content_file(file_path: Path) -> bool:
+            """Check if file is actual content (not project documentation)"""
+            name_upper = file_path.name.upper()
+            # Check if filename contains any exclude pattern
+            for pattern in exclude_patterns:
+                if pattern in name_upper:
+                    return False
+            return True
+        
+        md_files = [f for f in all_md_files if is_content_file(f)]
         
         if md_files:
             print(f"Found {len(md_files)} already-extracted Markdown files")
-            print("Processing from extracted directory (skipping zip extraction)...")
+            
+            # Check which files are already indexed
+            from src.tools.vector_tools import get_indexed_files
+            import os
+            
+            print("Checking which files are already indexed...")
+            indexed_files = get_indexed_files(collection_name=collection_name)
+            print(f"Found {len(indexed_files)} files already indexed in vector database")
+            
+            # Normalize paths for comparison (handle absolute vs relative path mismatches)
+            def normalize_path(path: str) -> str:
+                """Normalize path for comparison (resolve to absolute, normalize separators)"""
+                try:
+                    # Convert to absolute path and normalize
+                    abs_path = os.path.abspath(path)
+                    # Normalize separators (Windows backslashes to forward slashes for consistency)
+                    normalized = abs_path.replace('\\', '/')
+                    return normalized.lower()  # Case-insensitive comparison
+                except Exception:
+                    # Fallback to original if normalization fails
+                    return path.replace('\\', '/').lower()
+            
+            # Normalize indexed files set
+            normalized_indexed = {normalize_path(f) for f in indexed_files}
+            
+            # Filter out already-indexed files using normalized paths
+            md_file_paths = [str(f) for f in md_files]
+            normalized_md_paths = {normalize_path(f): f for f in md_file_paths}
+            
+            new_files = [f for norm_path, f in normalized_md_paths.items() if norm_path not in normalized_indexed]
+            already_indexed = [f for norm_path, f in normalized_md_paths.items() if norm_path in normalized_indexed]
+            
+            # Debug: Show sample paths if there's a mismatch
+            if len(already_indexed) == 0 and len(new_files) > 0 and len(indexed_files) > 0:
+                print("\n⚠️  Path mismatch detected! Sample paths:")
+                print(f"  Sample indexed path: {list(indexed_files)[:1]}")
+                print(f"  Sample file path: {md_file_paths[:1]}")
+                print(f"  Normalized indexed: {list(normalized_indexed)[:1]}")
+                print(f"  Normalized file: {list(normalized_md_paths.keys())[:1]}")
+            
+            print(f"  - Already indexed: {len(already_indexed)} files")
+            print(f"  - Need indexing: {len(new_files)} files")
             print("=" * 60)
-            document_agent = framework.get_agent("document_agent")
-            if document_agent:
-                # Process files directly from extracted directory
-                result = document_agent.process({"file_paths": [str(f) for f in md_files]})
-                files_processed = result.get('files_processed', 0)
-                chunks_created = result.get('chunks_created', 0)
-                print("=" * 60)
-                print(f"✓ Document processing complete!")
-                print(f"  Files processed: {files_processed}")
-                print(f"  Chunks created: {chunks_created}")
-                print("=" * 60)
+            
+            if new_files:
+                print("Processing new files from extracted directory...")
+                # Start progress tracking
+                progress_tracker.start(total_files=len(new_files))
                 
-                # Index chunks
-                chunks = result.get("chunks", [])
-                if chunks:
-                    print(f"\nStarting vector indexing for {len(chunks)} chunks...")
+                document_agent = framework.get_agent("document_agent")
+                if document_agent:
+                    # Process only new files (with progress tracking)
+                    result = document_agent.process(
+                        {"file_paths": new_files},
+                        progress_tracker=progress_tracker
+                    )
+                    files_processed = result.get('files_processed', 0)
+                    chunks_created = result.get('chunks_created', 0)
                     print("=" * 60)
-                    retrieval_agent = framework.get_agent("retrieval_agent")
-                    if retrieval_agent:
-                        retrieval_agent.index_chunks(chunks)
+                    print(f"✓ Document processing complete!")
+                    print(f"  Files processed: {files_processed}")
+                    print(f"  Chunks created: {chunks_created}")
+                    print("=" * 60)
+                    
+                    # Index chunks incrementally
+                    chunks = result.get("chunks", [])
+                    if chunks:
+                        print(f"\nStarting vector indexing for {len(chunks)} chunks...")
                         print("=" * 60)
-                        print("✓ Chunks indexed in vector store")
-                        print("=" * 60)
+                        progress_tracker.update_chunks(0, total=len(chunks))
+                        
+                        retrieval_agent = framework.get_agent("retrieval_agent")
+                        if retrieval_agent:
+                            # Index chunks with progress updates
+                            retrieval_agent.index_chunks(chunks, progress_tracker=progress_tracker)
+                            print("=" * 60)
+                            print("✓ Chunks indexed in vector store")
+                            print("=" * 60)
+                        
+                        progress_tracker.complete(f"Indexed {len(chunks)} chunks from {files_processed} files")
+            else:
+                print("✓ All files are already indexed. Skipping processing.")
+                print("=" * 60)
             return
     
     # Fallback to zip extraction if no extracted files found
@@ -187,6 +292,26 @@ def initialize_documents(framework):
         print("No extracted files or zip files found.")
 
 
+def initialize_documents_background(framework):
+    """Initialize documents in background thread"""
+    import threading
+    from src.utils.indexing_progress import IndexingProgress
+    
+    def background_indexing():
+        progress_tracker = IndexingProgress()
+        try:
+            initialize_documents(framework, progress_tracker=progress_tracker)
+        except Exception as e:
+            print(f"Error in background indexing: {e}")
+            progress_tracker.error(str(e))
+            import traceback
+            traceback.print_exc()
+    
+    thread = threading.Thread(target=background_indexing, daemon=True)
+    thread.start()
+    return thread
+
+
 def main():
     """Main entry point"""
     print("Initializing RAG Chatbot with BMAD Framework...")
@@ -203,13 +328,13 @@ def main():
     initialize_collection(collection_name, vector_size)
     print(f"Vector store initialized: {collection_name}")
     
-    # Initialize documents
-    initialize_documents(framework)
-    
-    # Start GUI
+    # Start GUI immediately (don't wait for indexing)
     print("Starting GUI...")
     gui_agent = framework.get_agent("gui_agent")
     if gui_agent:
+        # Start background indexing
+        initialize_documents_background(framework)
+        # Start GUI
         gui_agent.process({"action": "start"})
         
         # Keep main thread alive

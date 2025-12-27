@@ -1,0 +1,120 @@
+{
+  "high_priority": [
+    {
+      "name": "TSCA Chemical Inventory",
+      "category": "chemical_compliance",
+      "source": "EPA",
+      "url": "https://www.epa.gov/tsca-inventory",
+      "data_format": "CSV, Excel, API"
+    },
+    {
+      "name": "RoHS Database",
+      "category": "chemical_compliance",
+      "source": "EU",
+      "url": "https://ec.europa.eu/environment/waste/rohs_eee/",
+      "data_format": "PDF, Excel, HTML"
+    },
+    {
+      "name": "FDA Orange Book",
+      "category": "healthcare",
+      "source": "FDA",
+      "url": "https://www.fda.gov/drugs/drug-approvals-and-databases/approved-drug-products-therapeutic-equivalence-evaluations-orange-book",
+      "data_format": "PDF, Excel, API"
+    },
+    {
+      "name": "OSHA CFR Database",
+      "category": "safety_health",
+      "source": "OSHA",
+      "url": "https://www.osha.gov/laws-regs/regulations/standardnumber",
+      "data_format": "HTML, PDF"
+    },
+    {
+      "name": "NIOSH Pocket Guide",
+      "category": "safety_health",
+      "source": "NIOSH",
+      "url": "https://www.cdc.gov/niosh/npg/",
+      "data_format": "Web database, PDF"
+    }
+  ],
+  "medium_priority": [
+    {
+      "name": "GHS Classification Database",
+      "category": "chemical_compliance",
+      "source": "UN",
+      "url": "https://unece.org/transport/dangerous-goods/ghs-rev9-2021",
+      "data_format": "PDF, database"
+    },
+    {
+      "name": "FDA Drug Approvals Database",
+      "category": "healthcare",
+      "source": "FDA",
+      "url": "https://www.fda.gov/drugs/drug-approvals-and-databases",
+      "data_format": "JSON, XML, CSV"
+    },
+    {
+      "name": "FDA Medical Device Database",
+      "category": "healthcare",
+      "source": "FDA",
+      "url": "https://www.fda.gov/medical-devices/device-advice-comprehensive-regulatory-assistance/medical-device-databases",
+      "data_format": "CSV, Excel, API"
+    },
+    {
+      "name": "ACGIH TLVs Database",
+      "category": "safety_health",
+      "source": "ACGIH",
+      "url": "https://www.acgih.org/tlv-bei-guidelines/",
+      "data_format": "Database, PDF"
+    },
+    {
+      "name": "SEC EDGAR Database",
+      "category": "financial",
+      "source": "SEC",
+      "url": "https://www.sec.gov/edgar/searchedgar/companysearch.html",
+      "data_format": "HTML, XML, JSON (API)"
+    },
+    {
+      "name": "USPTO Patent Database",
+      "category": "intellectual_property",
+      "source": "USPTO",
+      "url": "https://www.uspto.gov/patents/search",
+      "data_format": "XML, JSON (API), PDF"
+    },
+    {
+      "name": "FDA Food Code",
+      "category": "food_agriculture",
+      "source": "FDA",
+      "url": "https://www.fda.gov/food/fda-food-code",
+      "data_format": "PDF, HTML"
+    },
+    {
+      "name": "USDA Food Composition Database",
+      "category": "food_agriculture",
+      "source": "USDA",
+      "url": "https://fdc.nal.usda.gov/",
+      "data_format": "JSON, CSV, API"
+    },
+    {
+      "name": "DOT Hazardous Materials Database",
+      "category": "transportation",
+      "source": "DOT",
+      "url": "https://www.phmsa.dot.gov/hazmat",
+      "data_format": "PDF, HTML, database"
+    }
+  ],
+  "low_priority": [
+    {
+      "name": "ISO Standards Database",
+      "category": "standards",
+      "source": "ISO",
+      "url": "https://www.iso.org/standards.html",
+      "data_format": "PDF (metadata available)"
+    },
+    {
+      "name": "IEC Standards Database",
+      "category": "standards",
+      "source": "IEC",
+      "url": "https://webstore.iec.ch/",
+      "data_format": "PDF, database"
+    }
+  ]
+}

@@ -128,13 +128,14 @@ class RetrievalAgent(BaseAgent):
         initialize_collection(self.collection_name, vector_size)
         self._collection_initialized = True
     
-    def index_chunks(self, chunks: List[Dict], reindex: bool = False):
+    def index_chunks(self, chunks: List[Dict], reindex: bool = False, progress_tracker=None):
         """
         Index document chunks in vector store
         
         Args:
             chunks: List of chunk dictionaries
             reindex: Whether this is a reindexing operation
+            progress_tracker: Optional IndexingProgress tracker for progress updates
         """
         if not chunks:
             logger.warning("No chunks to index")
@@ -199,6 +200,10 @@ class RetrievalAgent(BaseAgent):
                 collection_name=self.collection_name
             )
             all_point_ids.extend(point_ids)
+            
+            # Update progress tracker if provided
+            if progress_tracker:
+                progress_tracker.update_chunks(len(all_point_ids), total=len(texts))
         
         logger.info(f"Indexed {len(all_point_ids)} chunks in vector store")
         

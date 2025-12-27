@@ -107,10 +107,22 @@ def hybrid_chunk_markdown(
             })
     
     # Add source file info to each chunk
+    # Normalize path to ensure consistent storage (absolute path, normalized separators)
+    import os
     file_path = structure.get('file_path', '')
+    if file_path:
+        try:
+            # Convert to absolute path and normalize separators
+            normalized_path = os.path.abspath(file_path).replace('\\', '/')
+        except Exception:
+            # Fallback to original if normalization fails
+            normalized_path = file_path.replace('\\', '/')
+    else:
+        normalized_path = ''
+    
     for chunk in chunks:
-        chunk['source_file'] = file_path
-        chunk['metadata']['source_file'] = file_path
+        chunk['source_file'] = normalized_path
+        chunk['metadata']['source_file'] = normalized_path
     
     return chunks
 

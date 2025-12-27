@@ -3,7 +3,7 @@
 from .document_tools import extract_markdown_from_zip, parse_markdown_structure
 from .chunking_tools import hybrid_chunk_markdown
 from .embedding_tools import create_embeddings
-from .vector_tools import store_vectors, search_vectors
+from .vector_tools import store_vectors, search_vectors, get_indexed_files, is_file_indexed
 from .llm_tools import call_llm, stream_llm
 from .tool_registry import (
     ToolRegistry,
@@ -19,6 +19,8 @@ __all__ = [
     "create_embeddings",
     "store_vectors",
     "search_vectors",
+    "get_indexed_files",
+    "is_file_indexed",
     "call_llm",
     "stream_llm",
     "ToolRegistry",
